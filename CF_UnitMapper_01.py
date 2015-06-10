@@ -36,9 +36,6 @@ def main():
         else:
             continue
         
-        isCurveClosed = False
-        if rs.PointCompare(polylinePts[0], polylinePts[len(polylinePts)-1]):
-            isCurveClosed = True
         
         for pt in polylinePts:
             bc = calcBiLinear(pt,unitRectMin,unitRectMax)
@@ -60,11 +57,9 @@ def main():
                 nX1 = lerp(v0,v1,bLC[0])
                 nX2 = lerp(v3,v2 ,bLC[0])
                 pt = lerp(nX1,nX2,bLC[1])
-                rs.AddPoint(pt)
+                #rs.AddPoint(pt)
                 newPts.append(pt)
                 
-            if degree == 3 and isCurveClosed:
-                newPts.append(newPts[0])
             rs.AddCurve(newPts,degree)
 
 
