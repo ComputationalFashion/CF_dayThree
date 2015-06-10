@@ -21,38 +21,51 @@ def main():
     unitRectMin = rs.GetPoint("select unit rect MIN")
     unitRectMax = rs.GetPoint("select unit rect MAX")
     
-    unit = rs.GetObject("select polyline", 4)
+    units = rs.GetObjects("select curves & polylines", 4)
     mesh = rs.GetObject("select mesh",32)
     
-    unitPts = []
-    unitCoords =[]
-    
-    polylinePts = rs.PolylineVertices(unit)
-    
-    for pt in polylinePts:
-        bc = calcBiLinear(pt,unitRectMin,unitRectMax)
-        unitCoords.append(bc)
-        unitPts.append(pt)
-    
-    v = rs.MeshVertices(mesh)
-    faceVerts = rs.MeshFaceVertices(mesh)
-    
-    for fv in faceVerts:
-        v0 = v[fv[0]]
-        v1 = v[fv[1]]
-        v2 = v[fv[2]]
-        v3 = v[fv[3]]
+    for unit in units:
+        degree = rs.CurveDegree(unit)
+        unitPts = []
+        unitCoords =[]
         
-        newPts = []
-        for i in range(0, len(unitPts)):
-            bLC = unitCoords[i]
-            nX1 = lerp(v0,v1,bLC[0])
-            nX2 = lerp(v3,v2 ,bLC[0])
-            pt = lerp(nX1,nX2,bLC[1])
-            rs.AddPoint(pt)
-            newPts.append(pt)
+        if degree == 1:
+            polylinePts = rs.PolylineVertices(unit)
+        elif degree == 3:
+            polylinePts = rs.CurvePoints(unit)
+        else:
+            continue
+        
+        isCurveClosed = False
+        if rs.PointCompare(polylinePts[0], polylinePts[len(polylinePts)-1]):
+            isCurveClosed = True
+        
+        for pt in polylinePts:
+            bc = calcBiLinear(pt,unitRectMin,unitRectMax)
+            unitCoords.append(bc)
+            unitPts.append(pt)
+        
+        v = rs.MeshVertices(mesh)
+        faceVerts = rs.MeshFaceVertices(mesh)
+        
+        for fv in faceVerts:
+            v0 = v[fv[0]]
+            v1 = v[fv[1]]
+            v2 = v[fv[2]]
+            v3 = v[fv[3]]
             
-        rs.AddPolyline(newPts)
+            newPts = []
+            for i in range(0, len(unitPts)):
+                bLC = unitCoords[i]
+                nX1 = lerp(v0,v1,bLC[0])
+                nX2 = lerp(v3,v2 ,bLC[0])
+                pt = lerp(nX1,nX2,bLC[1])
+                rs.AddPoint(pt)
+                newPts.append(pt)
+                
+            if degree == 3 and isCurveClosed:
+                newPts.append(newPts[0])
+            rs.AddCurve(newPts,degree)
 
 
 if __name__ == "__main__":
